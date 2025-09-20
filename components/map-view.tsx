@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { useArgo } from "@/contexts/argo-context"
 
-// Mock ARGO float data
+// Mock ARGO float data - will be replaced by real data from context
 const mockFloats = [
   { id: "IN123", lat: 8.5, lon: 73.2, status: "active", lastObservation: "2024-01-15" },
   { id: "IN456", lat: 12.3, lon: 75.1, status: "active", lastObservation: "2024-01-14" },
@@ -17,16 +18,33 @@ export function MapView() {
   const mapRef = useRef<HTMLDivElement>(null)
   const [selectedFloat, setSelectedFloat] = useState<string | null>(null)
 
+  const { floats, region, parameters, isLoading } = useArgo()
+
+  // Use real data if available, otherwise fall back to mock data
+  const displayFloats = floats.length > 0 ? floats : mockFloats
+
   useEffect(() => {
     // Since we can't use actual Leaflet in this environment, we'll create a mock map
     if (mapRef.current) {
       // This would normally initialize Leaflet map
-      console.log("Map would be initialized here with Leaflet")
+      console.log("[v0] Map would be initialized here with Leaflet")
+      console.log("[v0] Current region:", region)
+      console.log("[v0] Current parameters:", parameters)
+      console.log("[v0] Displaying floats:", displayFloats)
     }
-  }, [])
+  }, [region, parameters, displayFloats])
 
   return (
     <div className="space-y-4">
+      {isLoading && (
+        <div className="text-center text-sm text-muted-foreground">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span>Loading map data...</span>
+          </div>
+        </div>
+      )}
+
       {/* Mock Map Container */}
       <Card>
         <CardContent className="p-0">
@@ -38,7 +56,7 @@ export function MapView() {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-blue-600/30"></div>
 
             {/* Mock Float Markers */}
-            {mockFloats.map((float) => (
+            {displayFloats.map((float) => (
               <div
                 key={float.id}
                 className={`absolute w-3 h-3 rounded-full cursor-pointer transform -translate-x-1/2 -translate-y-1/2 ${
@@ -62,10 +80,14 @@ export function MapView() {
 
             {/* Map Labels */}
             <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm">
-              <div className="font-semibold">ARGO Float Locations</div>
+              <div className="font-semibold">
+                ARGO Float Locations{" "}
+                {region && `- ${region.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}`}
+              </div>
               <div className="text-muted-foreground text-xs">
-                {mockFloats.filter((f) => f.status === "active").length} active,{" "}
-                {mockFloats.filter((f) => f.status === "inactive").length} inactive
+                {displayFloats.filter((f) => f.status === "active").length} active,{" "}
+                {displayFloats.filter((f) => f.status === "inactive").length} inactive
+                {parameters.length > 0 && <div className="mt-1">Parameters: {parameters.join(", ")}</div>}
               </div>
             </div>
 
@@ -89,7 +111,7 @@ export function MapView() {
         <Card>
           <CardContent className="pt-6">
             {(() => {
-              const float = mockFloats.find((f) => f.id === selectedFloat)
+              const float = displayFloats.find((f) => f.id === selectedFloat)
               if (!float) return null
 
               return (

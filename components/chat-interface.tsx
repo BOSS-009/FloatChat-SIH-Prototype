@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { useArgo } from "@/contexts/argo-context"
 
 interface Message {
   id: string
@@ -22,6 +23,8 @@ interface Message {
 }
 
 export function ChatInterface() {
+  const { fetchData, setShowMap, profiles, isLoading: argoLoading } = useArgo()
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -33,12 +36,21 @@ export function ChatInterface() {
         {
           label: "View on Map",
           icon: <span className="text-sm">🗺️</span>,
-          onClick: () => console.log("View on map"),
+          onClick: async () => {
+            console.log("[v0] View on map clicked from chat")
+            await fetchData()
+            setShowMap(true)
+          },
         },
         {
           label: "Download Data",
           icon: <span className="text-sm">⬇️</span>,
-          onClick: () => console.log("Download data"),
+          onClick: async () => {
+            console.log("[v0] Download data clicked from chat")
+            await fetchData()
+            const { downloadData } = await import("@/lib/argo-api")
+            downloadData(profiles, "json")
+          },
         },
       ],
     },
@@ -85,12 +97,21 @@ export function ChatInterface() {
           {
             label: "View on Map",
             icon: <span className="text-sm">🗺️</span>,
-            onClick: () => console.log("View on map"),
+            onClick: async () => {
+              console.log("[v0] View on map clicked from AI response")
+              await fetchData()
+              setShowMap(true)
+            },
           },
           {
             label: "Download Data",
             icon: <span className="text-sm">⬇️</span>,
-            onClick: () => console.log("Download data"),
+            onClick: async () => {
+              console.log("[v0] Download data clicked from AI response")
+              await fetchData()
+              const { downloadData } = await import("@/lib/argo-api")
+              downloadData(profiles, "json")
+            },
           },
           {
             label: "Compare",
@@ -140,6 +161,7 @@ export function ChatInterface() {
                           size="sm"
                           className="h-7 text-xs bg-transparent"
                           onClick={action.onClick}
+                          disabled={argoLoading}
                         >
                           {action.icon}
                           <span className="ml-1">{action.label}</span>

@@ -4,15 +4,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapView } from "@/components/map-view"
 import { ProfileCharts } from "@/components/profile-charts"
 import { ArgoDataset } from "@/components/argo-dataset"
+import { useArgo } from "@/contexts/argo-context"
+import { useEffect, useState } from "react"
 
 export function VisualizationPanel() {
+  const { showMap, setShowMap } = useArgo()
+  const [activeTab, setActiveTab] = useState("map")
+
+  useEffect(() => {
+    if (showMap) {
+      setActiveTab("map")
+      // Reset the showMap flag after switching
+      setShowMap(false)
+    }
+  }, [showMap, setShowMap])
+
   return (
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Visualization</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <Tabs defaultValue="map" className="h-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <div className="px-6 pb-4">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="map">Map View</TabsTrigger>

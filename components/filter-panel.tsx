@@ -1,19 +1,30 @@
 "use client"
-
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { useArgo } from "@/contexts/argo-context"
 
 export function FilterPanel() {
-  const [dataset, setDataset] = useState<string>("")
-  const [region, setRegion] = useState<string>("")
-  const [startDate, setStartDate] = useState<string>("")
-  const [endDate, setEndDate] = useState<string>("")
-  const [parameters, setParameters] = useState<string[]>([])
+  const {
+    dataset,
+    setDataset,
+    region,
+    setRegion,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    parameters,
+    setParameters,
+    fetchData,
+    isLoading,
+    showMap,
+    setShowMap,
+    profiles,
+  } = useArgo()
 
   const handleParameterChange = (parameter: string, checked: boolean) => {
     if (checked) {
@@ -21,6 +32,19 @@ export function FilterPanel() {
     } else {
       setParameters(parameters.filter((p) => p !== parameter))
     }
+  }
+
+  const canFetchData = dataset && region && parameters.length > 0
+  const canViewMap = canFetchData && startDate && endDate
+  const canDownloadData = canFetchData
+
+  const handleDownloadData = async () => {
+    console.log("[v0] Download data clicked")
+    await fetchData()
+
+    // Import download function and use current profiles
+    const { downloadData } = await import("@/lib/argo-api")
+    downloadData(profiles, "json")
   }
 
   return (
@@ -98,6 +122,36 @@ export function FilterPanel() {
           </div>
         </div>
 
+        {/* Main Action Buttons */}
+        <div className="space-y-3">
+          <Label>Main Actions</Label>
+          <div className="space-y-2">
+            <Button
+              className="w-full justify-start"
+              size="sm"
+              disabled={!canViewMap || isLoading}
+              onClick={() => {
+                fetchData().then(() => setShowMap(true))
+              }}
+            >
+              <span className="mr-2">🗺️</span>
+              View Map
+              {!canViewMap && <span className="ml-2 text-xs opacity-70">(Need all params + dates)</span>}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start bg-transparent"
+              size="sm"
+              disabled={!canDownloadData || isLoading}
+              onClick={handleDownloadData}
+            >
+              <span className="mr-2">⬇️</span>
+              Download Data
+              {!canDownloadData && <span className="ml-2 text-xs opacity-70">(Need dataset + region + params)</span>}
+            </Button>
+          </div>
+        </div>
+
         {/* Quick Action Buttons */}
         <div className="space-y-3">
           <Label>Quick Actions</Label>
@@ -116,6 +170,16 @@ export function FilterPanel() {
             </Button>
           </div>
         </div>
+
+        {/* Status indicator */}
+        {isLoading && (
+          <div className="text-center text-sm text-muted-foreground">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span>Loading ARGO data...</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
